@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>template syntax</title>
+</head>
+
+<body>
+    <div id="root">
+        <div>hello {{people.name}}</div>
+    </div>
+</body>
+
+<script>
+    function JSVue(options) {
+        this._data = options.data;
+        this._el = options.el;
+
+        this._templateDOM = document.querySelector(this._el);
+        this._parent = this._templateDOM.parentNode;
+        this.render();
+    }
+
+    JSVue.prototype.render = function () {
+        this.compiler();
+    }
+
+    JSVue.prototype.compiler = function () {
+        let realDOM = this._templateDOM.cloneNode(true);
+        compiler(realDOM, this._data);
+        this.update(realDOM);
+    }
+
+    JSVue.prototype.update = function (realDOM) {
+        this._parent.replaceChild(realDOM, this._templateDOM);
+    }
+
+    let rBrace = /\{\{(.+?)\}\}/g;
+    function compiler(template, data) {
+        let childNodes = template.childNodes;
+        for (let i = 0, childNodesLen = childNodes.length; i < childNodesLen; ++i) {
+            let node = childNodes[i],
+                nodeType = node.nodeType;
+            if (nodeType === 3) {   // 文本节点
+                let txt = node.nodeValue.replace(rBrace, (_, g) => {
+                    return getValByPath(data, g.trim());
+                });
+                childNodes[i].nodeValue = txt;
+            } else if (nodeType === 1) {    // 有子节点的节点
+                compiler(childNodes[i], data);
+            }
+        }
+    }
+
+    // 通过 a.b.c 的形式获取对象属性
+    function getValByPath(obj, path) {
+        let pathArr = path.split('.');
+        let key;
+        while(key = pathArr.shift()) {
+            obj = obj[key];
+        }
+        return obj;
+    }
+
+
+    let app = new JSVue({
+        el: '#root',
+        data: {
+            people: {
+                name: 'warryy'
+            }
+        }
+    });
+</script>
+
+</html>
