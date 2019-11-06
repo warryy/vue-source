@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>vue abstract</title>
+</head>
+
+<body>
+    <div id="root">
+        <div class="c1">
+            <p title="title1" id="haha1">haha1</p>
+            <p title="title1">haha2</p>
+        </div>
+        <ul>
+            <li>这是 li1</li>
+            <li>这是 li2</li>
+            <li>这是 li3</li>
+        </ul>
+    </div>
+</body>
+
+<script>
+    class VNode {
+        constructor(tag, data, value, type) {
+            this.tag = tag;
+            this.data = data;
+            this.value = value;
+            this.type = type;
+            this.children = [];
+        }
+
+        appendChild(node) {
+            this.children.push(node);
+        }
+    }
+
+    function getVNode(node) {
+        let _nodeType = node.nodeType;
+        let _vnode = null;
+
+
+
+        if (_nodeType === 3) {
+            let _value = node.nodeValue;
+            _vnode = new VNode(undefined, undefined, _value, _nodeType);
+
+        } else if (_nodeType === 1) {
+            let _tag = node.nodeName.toLowerCase();
+            let _data = {};
+            let _attrs = node.attributes;
+
+            for (let i = 0, _attrsLen = _attrs.length; i < _attrsLen; ++i) { // attrs[i]：属性节点 {nodeType ==== 2 }
+                _data[_attrs[i].nodeName] = _attrs[i].nodeValue;
+            }
+
+            _vnode = new VNode(_tag, _data, undefined, _nodeType);
+            for (let i = 0, _childrenLen = node.childNodes.length; i < _childrenLen; ++i) {
+                _vnode.appendChild(getVNode(node.childNodes[i]));
+            }
+        }
+
+        return _vnode;
+    }
+
+    let root = document.querySelector('#root');
+    console.log(root)
+    console.log(getVNode(root))
+</script>
+
+</html>
