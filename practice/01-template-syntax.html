@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>template syntax</title>
+</head>
+
+<body>
+  <div id="root">
+    <div>
+      <p>{{name}}-{{message}}</p>
+    </div>
+    <p>{{name}}</p>
+    <p>{{message}}</p>
+  </div>
+</body>
+
+<script>
+  // 1. 拿到模板
+  // 2. 拿到数据
+  // 3. 将数据放到模板中
+  // 4. 将模板放到页面中
+
+  let rBrace = /\{\{(.+?)\}\}/g;
+
+  // 1
+  const template = document.querySelector('#root');
+
+  // 2
+  const data = {
+    name: 'warryy',
+    message: 'happy'
+  }
+
+  // 3
+  function compiler(template, data) {
+    let childNodes = template.childNodes;
+    for (let i = 0, childNodesLen = childNodes.length; i < childNodesLen; ++i) {
+      let node = childNodes[i],
+        nodeType = node.nodeType;
+      if (nodeType === 3) {
+        let txt = node.nodeValue.replace(rBrace, (_, g) => {
+          return data[g.trim()]
+        });
+
+        childNodes[i].nodeValue = txt;
+      } else if (nodeType === 1) {
+        compiler(childNodes[i], data);
+      }
+
+    }
+  }
+
+  let newNode = template.cloneNode(true);
+  compiler(newNode, data);
+
+  // 4
+  template.parentNode.replaceChild(newNode, template);
+</script>
+
+</html>
