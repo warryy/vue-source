@@ -57,12 +57,12 @@
 
     // 通过 a.b.c 的形式获取对象属性
     function getValByPath(obj, path) {
-        let pathArr = path.split('.');
-        let key;
-        while(key = pathArr.shift()) {
-            obj = obj[key];
+        let paths = path.split('.');
+        let res = obj, prop;
+        while(prop = paths.shift()) {
+            res = res[prop];
         }
-        return obj;
+        return res;
     }
 
 
