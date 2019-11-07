@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>JGVue</title>
+</head>
+
+<body>
+    <div id="app">
+        <h3 title="welcome">hello {{person.name}}</h3>
+        <p class="tips">your sex is: {{person.sex}}</p>
+        <section>
+            <em>爱好：{{hobby}}</em>
+        </section>
+    </div>
+</body>
+
+<script>
+    function JGVue(options) {
+        this._template = document.querySelector(options.el);
+        // 一切的开始，万物起源
+        this.mount();
+    }
+
+    JGVue.prototype.mount = function () {
+        // data + AST => newVNode
+        this.render = this.createRenderFn();
+        /**
+         * 1. 执行 render 方法生成 VNode
+         * 2. 执行 update 方法将 VNode 放到页面中去
+         * 
+         * todo： 执行 diff 算法（此处复杂，先忽略）
+         */
+        this.mountComponent();
+    }
+
+    // 函数柯里化，缓存 AST，生成 render 函数
+    JGVue.prototype.createRenderFn = function () {
+        // 闭包缓存 AST
+        this._AST = getVNode(this._template);
+        return function render() {
+
+        }
+    }
+
+    JGVue.prototype.mountComponent = function () {
+        this.render();
+        this.update();
+    }
+
+    /**
+     * 以下函数是工具函数
+     */
+    // node => vnode
+    function getVNode(node) {
+
+    }
+
+    // vnode => node
+    function parseNode(vnode) {
+
+    }
+
+    // data[a.b.c] => data.a.b.c
+    function getValByPath(path) {
+
+    }
+
+    new JGVue({
+        el: '#app',
+        data: {
+            person: {
+                name: 'warryy',
+                sex: '男',
+                hobby: '写 vue'
+            }
+        }
+    });
+</script>
+
+</html>
