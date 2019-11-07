@@ -13,13 +13,14 @@
         <h3 title="welcome">hello {{person.name}}</h3>
         <p class="tips">your sex is: {{person.sex}}</p>
         <section>
-            <em>爱好：{{hobby}}</em>
+            <em>爱好：{{person.others.hobby}}</em>
         </section>
     </div>
 </body>
 
 <script>
     function JGVue(options) {
+        this._data = options.data;
         this._template = document.querySelector(options.el);
         // 一切的开始，万物起源
         this.mount();
@@ -40,15 +41,34 @@
     // 函数柯里化，缓存 AST，生成 render 函数
     JGVue.prototype.createRenderFn = function () {
         // 闭包缓存 AST
-        this._AST = getVNode(this._template);
+        let _AST = getVNode(this._template);
         return function render() {
-
+            let _newvnode = combine(_AST, this._data)
+            return _newvnode;
         }
     }
 
     JGVue.prototype.mountComponent = function () {
-        this.render();
-        this.update();
+        this.update(this.render());
+    }
+
+    JGVue.prototype.update = function (newvnode) {
+        let _newNode = parseNode(newvnode);
+        this._template.parentNode.replaceChild(_newNode, this._template);
+    }
+
+    class VNode {
+        constructor(tag, data, value, type) {
+            this.tag = tag;
+            this.data = data;
+            this.value = value;
+            this.type = type;
+            this.children = [];
+        }
+
+        appendChild(child) {
+            this.children.push(child);
+        }
     }
 
     /**
@@ -56,17 +76,88 @@
      */
     // node => vnode
     function getVNode(node) {
+        let _nodeType = node.nodeType;
+        let _vnode = null;
 
+        if (_nodeType === 1) {
+            let _tag = node.nodeName,
+                _attrs = node.attributes,
+                _attrsLen = _attrs.length,
+                _data = {},
+                _subNode = node.childNodes,
+                _subNodeLen = _subNode.length;
+
+            for (let i = 0; i < _attrsLen; ++i) { // attributes: nodeType === 2
+                _data[_attrs[i].nodeName] = _attrs[i].nodeValue;
+            }
+
+            _vnode = new VNode(_tag, _data, undefined, _nodeType);
+
+            for (let i = 0; i < _subNodeLen; ++i) {
+                _vnode.appendChild(getVNode(_subNode[i]));
+            }
+        } else if (_nodeType === 3) {
+            let _value = node.nodeValue;
+            _vnode = new VNode(undefined, undefined, _value, _nodeType);
+        }
+
+        return _vnode;
+    }
+
+    // data + AST => new vnode
+    function combine(ast, data) {
+        let _type = ast.type,
+            _data = ast.data,
+            _value = ast.value,
+            _tag = ast.tag;
+
+        let _vnode = null;
+        if (_type === 3) {
+            let _txt = _value.replace(/\{\{(.+?)\}\}/, (_, g) => {
+                return getValByPath(data, g.trim());
+            });
+            _vnode = new VNode(undefined, undefined, _txt, _type);
+            
+        } else if (_type === 1) {
+            _vnode = new VNode(_tag, _data, undefined, _type);
+
+            ast.children.forEach(child => {
+                _vnode.appendChild(combine(child, data));
+            });
+        }
+        return _vnode;
     }
 
     // vnode => node
     function parseNode(vnode) {
+        let _vnodeType = vnode.type,
+            _node = null;
+        if (_vnodeType === 3) {
+            _node = document.createTextNode(vnode.value);
+        } else if (_vnodeType === 1) {
+            _node = document.createElement(vnode.tag);
 
+            Object.keys(vnode.data).forEach(key => {
+                _node.setAttribute(key, vnode.data[key]);
+            });
+
+            vnode.children.forEach(child => {
+                _node.appendChild(parseNode(child));
+            });
+        }
+        return _node;
     }
 
     // data[a.b.c] => data.a.b.c
-    function getValByPath(path) {
+    function getValByPath(obj, path) {
+        let paths = path.split('.'),
+            res = obj;
 
+        paths.forEach(prop => {
+            res = res[prop];
+        });
+
+        return res;
     }
 
     new JGVue({
@@ -75,7 +166,9 @@
             person: {
                 name: 'warryy',
                 sex: '男',
-                hobby: '写 vue'
+                others: {
+                    hobby: '写 vue'
+                }
             }
         }
     });
