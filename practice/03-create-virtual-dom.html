@@ -65,9 +65,32 @@
         return _vnode;
     }
 
+    function parseNode(vnode) {
+        let _vnodeType = vnode.type;
+        let _node = null;
+
+        if (_vnodeType === 3) {
+            _node = document.createTextNode(vnode.value);
+        } else if (_vnodeType === 1) {
+            _node = document.createElement(vnode.tag);
+
+            let _data = vnode.data;
+            Object.keys(_data).forEach(key => {
+                _node.setAttribute(key, _data[key]);
+            });
+
+            vnode.children.forEach(childvnode => {
+                _node.appendChild(parseNode(childvnode));
+            });
+        }
+
+        return _node;
+    }
+
     let root = document.querySelector('#root');
-    console.log(root)
-    console.log(getVNode(root))
+    let vnode = getVNode(root);
+    console.log(vnode)
+    console.log(parseNode(vnode))
 </script>
 
 </html>
