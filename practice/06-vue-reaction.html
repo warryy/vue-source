@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>JGVue</title>
+</head>
+
+<body>
+    <div id="app">
+        <h3 title="welcome">hello {{person.name}}</h3>
+        <p class="tips">your sex is: {{person.sex}}</p>
+        <section>
+            <em>爱好：{{person.others.hobby}}</em>
+        </section>
+    </div>
+</body>
+
+<script>
+    function JGVue(options) {
+        this._data = options.data;
+        reactiveObj(this._data, this);
+        this._template = document.querySelector(options.el)
+        this._parent = this._template.parentNode;
+        this._el = options.el;
+        // 一切的开始，万物起源
+        this.mount();
+    }
+
+    JGVue.prototype.mount = function () {
+        // data + AST => newVNode
+        this.render = this.createRenderFn();
+        /**
+         * 1. 执行 render 方法生成 VNode
+         * 2. 执行 update 方法将 VNode 放到页面中去
+         * 
+         * todo： 执行 diff 算法（此处复杂，先忽略）
+         */
+        this.mountComponent();
+    }
+
+    // 函数柯里化，缓存 AST，生成 render 函数
+    JGVue.prototype.createRenderFn = function () {
+        // 闭包缓存 AST
+        let _AST = getVNode(this._template);
+        return function render() {
+            let _newvnode = combine(_AST, this._data)
+            return _newvnode;
+        }
+    }
+
+    JGVue.prototype.mountComponent = function () {
+        let mount = () => {
+            this.update(this.render());
+        }
+        mount.call(this);
+    }
+
+    JGVue.prototype.update = function (newvnode) {
+        let _newNode = parseNode(newvnode);
+        this._parent.replaceChild(_newNode, this._parent.querySelector(this._el));
+    }
+
+    class VNode {
+        constructor(tag, data, value, type) {
+            this.tag = tag;
+            this.data = data;
+            this.value = value;
+            this.type = type;
+            this.children = [];
+        }
+
+        appendChild(child) {
+            this.children.push(child);
+        }
+    }
+
+    /**
+     * 以下函数是工具函数
+     */
+    // node => vnode
+    function getVNode(node) {
+        let _nodeType = node.nodeType;
+        let _vnode = null;
+
+        if (_nodeType === 1) {
+            let _tag = node.nodeName,
+                _attrs = node.attributes,
+                _attrsLen = _attrs.length,
+                _data = {},
+                _subNode = node.childNodes,
+                _subNodeLen = _subNode.length;
+
+            for (let i = 0; i < _attrsLen; ++i) { // attributes: nodeType === 2
+                _data[_attrs[i].nodeName] = _attrs[i].nodeValue;
+            }
+
+            _vnode = new VNode(_tag, _data, undefined, _nodeType);
+
+            for (let i = 0; i < _subNodeLen; ++i) {
+                _vnode.appendChild(getVNode(_subNode[i]));
+            }
+        } else if (_nodeType === 3) {
+            let _value = node.nodeValue;
+            _vnode = new VNode(undefined, undefined, _value, _nodeType);
+        }
+
+        return _vnode;
+    }
+
+    // data + AST => new vnode
+    function combine(ast, data) {
+        let _type = ast.type,
+            _data = ast.data,
+            _value = ast.value,
+            _tag = ast.tag;
+
+        let _vnode = null;
+        if (_type === 3) {
+            let _txt = _value.replace(/\{\{(.+?)\}\}/, (_, g) => {
+                return getValByPath(data, g.trim());
+            });
+            _vnode = new VNode(undefined, undefined, _txt, _type);
+
+        } else if (_type === 1) {
+            _vnode = new VNode(_tag, _data, undefined, _type);
+
+            ast.children.forEach(child => _vnode.appendChild(combine(child, data)));
+        }
+        return _vnode;
+    }
+
+    // vnode => node
+    function parseNode(vnode) {
+        let _vnodeType = vnode.type,
+            _node = null;
+        if (_vnodeType === 3) {
+            _node = document.createTextNode(vnode.value);
+        } else if (_vnodeType === 1) {
+            _node = document.createElement(vnode.tag);
+
+            Object.keys(vnode.data).forEach(key => {
+                _node.setAttribute(key, vnode.data[key]);
+            });
+
+            vnode.children.forEach(child => {
+                _node.appendChild(parseNode(child));
+            });
+        }
+        return _node;
+    }
+
+    // data[a.b.c] => data.a.b.c
+    function getValByPath(obj, path) {
+        let paths = path.split('.'),
+            res = obj;
+
+        paths.forEach(prop => {
+            res = res[prop];
+        });
+
+        return res;
+    }
+
+    // reactive object
+    function reactiveObj(o, vm) {
+        let _keys = Object.keys(o);
+
+        _keys.forEach(key => {
+            let val = o[key];
+            if (Array.isArray(val)) {
+                val.forEach(item => {
+                    reactiveObj(item, vm);
+                });
+            } else {
+                reaction.call(vm, o, key, val);
+            }
+        });
+    }
+
+    // reaction
+    function reaction(obj, key, val) {
+        let that = this;
+        if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+            reactiveObj(obj[key], that);
+        } else {
+            Object.defineProperty(obj, key, {
+                configurable: true,
+                enumerable: false,
+                get() {
+                    return val;
+                },
+                set(newVal) {
+                    console.log(newVal)
+                    console.log(that._data)
+                    val = newVal;
+                    that.mount();
+                }
+            });
+        }
+    }
+
+    let app = new JGVue({
+        el: '#app',
+        data: {
+            person: {
+                name: 'warryy',
+                sex: '男',
+                others: {
+                    hobby: '写 vue'
+                }
+            }
+        }
+    });
+</script>
+
+</html>
