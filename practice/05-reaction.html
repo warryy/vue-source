@@ -15,24 +15,70 @@
     var {
         log
     } = console;
-    var o = {};
+    var o = {
+        name: 'vue',
+        class: [{
+                name: '英语',
+                score: 99
+            },
+            {
+                name: '数学',
+                score: 99
+            },
+            {
+                name: '语文',
+                score: 97
+            },
+        ]
+    };
 
-    reaction(o, 'name');
+    function reaction(obj, key, val) { // 注意, 此处用到了闭包来存储 val
 
-    function reaction(obj, val) {   // 注意, 此处用到了闭包来存储 val
-        Object.defineProperty(obj, val, {
+        if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+            reactiveObject(obj[key]);
+        }
+
+        Object.defineProperty(obj, key, {
             configurable: true,
             enumerable: false,
             get() {
-                log('get')
+                log('get key:', key)
                 return val;
             },
             set(newVal) {
-                log('set')
+                log('set val', val)
                 val = newVal;
             }
         });
     }
+
+    function reactiveObject(d) {
+        let keys = Object.keys(d);
+
+        keys.forEach(key => {
+            if (Array.isArray(d[key])) {
+                d[key].forEach(item => reactiveObject(item));
+            } else {
+                reaction(d, key, d[key]);
+            }
+        });
+
+    }
+
+    reactiveObject(o);
+
+    function f(args) {
+        console.log('f');
+    }
+
+    var cF = f;
+
+    f = function (args) {
+        cF(args);
+        console.log('s');
+    }
+
+    f();
 </script>
 
 </html>
