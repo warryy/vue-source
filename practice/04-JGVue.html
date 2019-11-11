@@ -117,13 +117,11 @@
                 return getValByPath(data, g.trim());
             });
             _vnode = new VNode(undefined, undefined, _txt, _type);
-            
+
         } else if (_type === 1) {
             _vnode = new VNode(_tag, _data, undefined, _type);
 
-            ast.children.forEach(child => {
-                _vnode.appendChild(combine(child, data));
-            });
+            ast.children.forEach(child => _vnode.appendChild(combine(child, data)));
         }
         return _vnode;
     }

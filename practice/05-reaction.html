@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>reaction</title>
+</head>
+
+<body>
+
+</body>
+<script>
+    var {
+        log
+    } = console;
+    var o = {};
+
+    reaction(o, 'name');
+
+    function reaction(obj, val) {   // 注意, 此处用到了闭包来存储 val
+        Object.defineProperty(obj, val, {
+            configurable: true,
+            enumerable: false,
+            get() {
+                log('get')
+                return val;
+            },
+            set(newVal) {
+                log('set')
+                val = newVal;
+            }
+        });
+    }
+</script>
+
+</html>
