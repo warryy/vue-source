@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>publish-subscribe pattern</title>
+</head>
+
+<body>
+    <script>
+        event = (function publishSubscribePattern() {
+            let _event = {};
+            
+            return {
+                on: function (type, handler) {
+                    ((_event[type]) || (_event[type] = [])).push(handler);
+                },
+                off: function (type, handler) {
+                    let argumentsLen = arguments.length;
+                    if (argumentsLen === 0) {
+                        _event = {};
+                    } else if (argumentsLen === 1) {
+                        _event[type] = [];
+                    } else {
+                        let _eventTypeLen = _event[type].length;
+                        for (let i = 0; i < _eventTypeLen; ++i) {
+                            if (_event[type][i] === handler) {
+                                _event[type].splice(i, 1);
+                                return;
+                            }
+                        }
+                    }
+                },
+                emit: function (type) {
+                    let fns = _event[type];
+                    if (!fns) return; 
+                    let fnsLen = fns.length;
+                    
+                    for (let i = 0; i < fnsLen; ++i) {
+                        fns[i]();
+                    }
+                },
+            }
+        })();
+        function handler () {
+            console.log(1)
+        }
+        event.on('click', () => {console.log(1)});
+        event.on('click', () => {console.log(2)});
+        event.on('click', () => {console.log(3)});
+        event.on('click', () => {console.log(4)});
+    </script>
+</body>
+
+</html>
