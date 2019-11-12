@@ -35,7 +35,7 @@
          * 
          * todo： 执行 diff 算法（此处复杂，先忽略）
          */
-        this.mountComponent();
+        this.initData();
     }
 
     // 函数柯里化，缓存 AST，生成 render 函数
@@ -58,6 +58,14 @@
     JGVue.prototype.update = function (newvnode) {
         let _newNode = parseNode(newvnode);
         this._parent.replaceChild(_newNode, this._parent.querySelector(this._el));
+    }
+
+    JGVue.prototype.initData = function () {
+        this.mountComponent();
+        let keys = Object.keys(this._data);
+        keys.forEach(key => {
+            proxy(this, '_data', key);
+        });
     }
 
     class VNode {
@@ -202,6 +210,20 @@
         }
     }
 
+    // 将 obj 对象的 prop 对象中的属性代理到 obj[key] 上
+    function proxy(obj, prop, key) {
+        Object.defineProperty(obj, key, {
+            configurable: true,
+            enumerable: false,
+            get() {
+                return obj[prop][key];
+            },
+            set(newVal) {
+                obj[prop][key] = newVal;
+            }
+        });
+    }
+
     let ARRAY_METHODS = [
         'push',
         'pop',
@@ -236,8 +258,7 @@
                 '打篮球',
                 '追剧'
             ],
-            objInArr: [
-                {
+            objInArr: [{
                     name: 'test'
                 },
                 {
